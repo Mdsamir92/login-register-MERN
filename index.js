@@ -32,8 +32,8 @@ app.post("/api/create-checkout-session",async(req,res)=>{
         payment_method_types:["card"],
         line_items:lineItems,
         mode:"payment",
-        success_url:"https://login-register-form-go9w.onrender.com/",
-        cancel_url:"https://login-register-form-go9w.onrender.com/cancel",
+        success_url:"https://sam-restaurant.vercel.app/",
+        cancel_url:"https://sam-restaurant.vercel.app/cancel",
     });
 
     res.json({id:session.id})
