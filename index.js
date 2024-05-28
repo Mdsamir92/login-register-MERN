@@ -4,13 +4,41 @@ const express = require("express")
 const cors = require("cors")
 const connectDb = require("./db")
 const Jwt = require("jsonwebtoken")
-
+const stripe = require("stripe")(process.env.STRIPE_SECRET);
 
 const app = express()
 app.use(express.json()) 
 app.use(express.urlencoded())
 app.use(cors())
 
+// checkout api for stripe
+app.post("/api/create-checkout-session",async(req,res)=>{
+    const {products} = req.body;
+
+
+    const lineItems = products.map((product)=>({
+        price_data:{
+            currency:"inr",
+            product_data:{
+                name:product.dishName,
+                images:[product.imgdata]
+            },
+            unit_amount:product.price * 100,
+        },
+        quantity:product.qnty
+    }));
+
+    const session = await stripe.checkout.sessions.create({
+        payment_method_types:["card"],
+        line_items:lineItems,
+        mode:"payment",
+        success_url:"http://localhost:3000",
+        cancel_url:"http://localhost:3000/cancel",
+    });
+
+    res.json({id:session.id})
+ 
+})
 
 
 //JWT
@@ -39,8 +67,6 @@ const TokenSchema = new mongoose.Schema({
 })
 TokenSchema.index({expiresAt:1},{expireAfterSeconds:0})
 const Token = new mongoose.model("token", TokenSchema);
-
-
 
 
 //  Routes  for Register
@@ -87,7 +113,7 @@ app.post("/login", async (req, res) => {
         }
                
         else {
-            const token = Jwt.sign({userId:usersame._id},SECRET_KEY,{expiresIn:'1hr'})
+            const token = Jwt.sign({userId:usersame._id},SECRET_KEY)
             const expiredAt= new Date(Date.now()+(60*60*1000))
            const tokenSave = new Token({
             userId:usersame._id,
